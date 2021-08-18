@@ -1,0 +1,7 @@
+{:deps
+ {cheshire/cheshire {:mvn/version "5.10.0"}
+  babashka/process {:mvn/version "0.0.2"}
+  metosin/malli {:mvn/version "0.6.1"}
+  spec-provider/spec-provider {:mvn/version "0.4.14"}}
+
+ :paths ["src"]}
