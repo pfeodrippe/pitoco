@@ -1,0 +1,20 @@
+;; shadow-cljs configuration
+{:source-paths ["frontend"]
+
+ :dev-http {8000 "resources/public"}
+
+ :builds {:app {:target :browser
+                :output-dir "resources/public/compiled"
+                :asset-path "/compiled"
+                :modules {:main {:init-fn pitoco.core/main!
+                                 :entries [pitoco.core]}}
+                :devtools {:after-load pitoco.core/refresh
+                           #_ #_:preloads   [com.fulcrologic.fulcro.inspect.preload]}}}
+ :dependencies [[binaryage/devtools "0.9.11"]
+                [cider/cider-nrepl "0.25.0"]
+                [re-frame "1.2.0"]
+                [reagent "1.1.0"]
+                [day8.re-frame/http-fx "0.2.3"]
+                [com.wsscode/transito "2021.07.04"]
+                [com.wsscode/pathom3 "2021.08.14-alpha"]
+                [com.taoensso/sente "1.16.2"]]}

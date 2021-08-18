@@ -1,7 +1,21 @@
-{:deps
+{:aliases
+ {:dev {:extra-deps {nubank/matcher-combinators {:mvn/version "3.3.1"}
+                     lambdaisland/kaocha {:mvn/version "1.0-612"}}
+        :extra-paths ["test" "resources-test"]}
+  :test {:extra-deps {nubank/matcher-combinators {:mvn/version "3.3.1"}
+                      lambdaisland/kaocha {:mvn/version "1.0-612"}}
+         :extra-paths ["test" "resources-test"]
+         :main-opts   ["-m" "kaocha.runner"]}}
+
+ :deps
  {cheshire/cheshire {:mvn/version "5.10.0"}
   babashka/process {:mvn/version "0.0.2"}
   metosin/malli {:mvn/version "0.6.1"}
-  spec-provider/spec-provider {:mvn/version "0.4.14"}}
+  spec-provider/spec-provider {:mvn/version "0.4.14"}
+  tick/tick {:mvn/version "0.5.0-RC1"}
+  lambdaisland/uri {:mvn/version "1.4.70"}
+  com.athaydes.rawhttp/rawhttp-core {:mvn/version "2.4.1"}
+  lambdaisland/deep-diff2 {:mvn/version "2.0.108"}
+  com.wsscode/pathom3 {:mvn/version "2021.08.14-alpha"}}
 
  :paths ["src"]}

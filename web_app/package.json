@@ -1,0 +1,14 @@
+{
+  "name": "pitoco",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "shadow-cljs": "2.15.9"
+  },
+  "dependencies": {
+    "daisyui": "^1.14.0",
+    "npx": "^10.2.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  }
+}
