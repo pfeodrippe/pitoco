@@ -1,0 +1,31 @@
+image:https://img.shields.io/clojars/v/pfeodrippe/pitoco.svg[link="http://clojars.org/pfeodrippe/pitoco",title="Clojars Project"]
+
+= Pitoco
+
+Create API schemas from
+
+We use https://github.com/stathissideris/spec-provider to infer
+Malli (https://github.com/metosin/malli) schemas and
+https://github.com/wilkerlucio/pathom3 as our main API.
+
+Malli has a way to generate schemas, but it was too slow in comparison
+with `spec-provider`.
+
+FIXME: See a quick video at ....
+
+== Installation
+
+Use it directly from github for now (`lein` and `deps` should be able
+to do it).
+
+== Usage
+
+See the test file and rich comments (`comment`) for usage.
+
+We have a web app which uses Pitoco so you can visualize your
+schemas easily, but you can use Pitoco as a library.
+
+You can start the web app with
+
+----
+----
