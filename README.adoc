@@ -2,7 +2,8 @@ image:https://img.shields.io/clojars/v/pfeodrippe/pitoco.svg[link="http://clojar
 
 = Pitoco
 
-Create API schemas from
+Create Malli API schemas from captured requests and responses (using either https://en.wikipedia.org/wiki/HAR_(file_format)[HAR] 
+archives from your browser or .pcap files from tcpdump).
 
 We use https://github.com/stathissideris/spec-provider to infer
 Malli (https://github.com/metosin/malli) schemas and
@@ -20,7 +21,7 @@ to do it).
 
 == Usage
 
-See the test file and rich comments (`comment`) for usage.
+See the test file and rich comments (`comment`) in the link:src/pitoco/core.clj[core] for usage.
 
 We have a web app which uses Pitoco so you can visualize your
 schemas easily, but you can use Pitoco as a library.
