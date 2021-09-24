@@ -26,4 +26,4 @@ We have a web app which uses Pitoco so you can visualize your
 schemas easily, but you can use Pitoco as a library.
 
 You can start the server at http://localhost:8081 by loading the
-`pitoco.server` namespace. Now access http://localhost:8000.
+`pitoco.server` namespace. Now start the `shadow-cljs` server and access http://localhost:8000.
