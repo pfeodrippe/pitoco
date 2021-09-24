@@ -306,6 +306,7 @@
   ;; - [ ] Show path on hover.
   ;; - [ ] Enable users to add regex for new data formats.
   ;; - [ ] Indicate which endpoints had modification when diffing.
+  ;; - [ ] Delete source.
   ;; - [x] List available api schemas sources.
   ;; - [ ] Update schemas in real time.
   ;; - [ ] Upload to S3 (test with minio).
