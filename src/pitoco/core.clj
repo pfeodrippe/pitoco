@@ -782,20 +782,20 @@
                                                     first)]
                     (-> new-api-schema
                         (dissoc :response-schema :request-schema)
-                        (merge {:response-schema-diff (->> (ddiff/diff
-                                                            (get-subschemas (:response-schema original-api-schema)
-                                                                            options)
-                                                            (get-subschemas (:response-schema new-api-schema)
-                                                                            options))
-                                                           (filter contains-diff?)
-                                                           seq)
-                                :request-schema-diff (->> (ddiff/diff
-                                                           (get-subschemas (:request-schema original-api-schema)
-                                                                           options)
-                                                           (get-subschemas (:request-schema new-api-schema)
-                                                                           options))
-                                                          (filter contains-diff?)
-                                                          seq)}))
+                        (merge {:response-schema-diff (when-not (= (:response-schema original-api-schema)
+                                                                   (:response-schema new-api-schema))
+                                                        (ddiff/diff
+                                                         (mu/to-map-syntax (:response-schema original-api-schema)
+                                                                           (process-options options))
+                                                         (mu/to-map-syntax (:response-schema new-api-schema)
+                                                                           (process-options options))))
+                                :request-schema-diff (when-not (= (:request-schema original-api-schema)
+                                                                  (:request-schema new-api-schema))
+                                                       (ddiff/diff
+                                                        (mu/to-map-syntax (:request-schema original-api-schema)
+                                                                          (process-options options))
+                                                        (mu/to-map-syntax (:request-schema new-api-schema)
+                                                                          (process-options options))))}))
                     (-> new-api-schema
                         (dissoc :response-schema :request-schema)
                         (merge {:response-schema-diff ::api-schema/new
@@ -840,6 +840,16 @@
                 :response-schema]}
   {::response-subschemas (api-response-subschemas-from-api-schema api-schema (pco/params env))})
 
+(pco/defresolver api-schema->request-schema-map [env api-schema]
+  {::pco/input [::api-schema/id
+                :request-schema]}
+  {::request-schema-map (mu/to-map-syntax (:request-schema api-schema) (process-options (pco/params env)))})
+
+(pco/defresolver api-schema->response-schema-map [env api-schema]
+  {::pco/input [::api-schema/id
+                :response-schema]}
+  {::response-schema-map (mu/to-map-syntax (:response-schema api-schema) (process-options (pco/params env)))})
+
 (def pathom-env
   (pci/register [pcap-path->dat-files
                  har-path->api-calls
@@ -849,7 +859,9 @@
                  api-schema->api-calls
                  api-schemas-diff-resolver
                  api-schema->api-request-subschemas
-                 api-schema->api-response-subschemas]))
+                 api-schema->api-response-subschemas
+                 api-schema->response-schema-map
+                 api-schema->request-schema-map]))
 
 (defn process
   ([tx]

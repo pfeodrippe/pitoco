@@ -1,10 +1,8 @@
 (ns pitoco.core-test
   (:require
-   [clojure.java.io :as io]
    [clojure.test :refer [deftest testing is]]
    [clojure.test.check.generators :as gen]
    [clojure.walk :as walk]
-   [lambdaisland.deep-diff2 :as ddiff]
    [malli.core :as m]
    [pitoco.core :as pit]
    matcher-combinators.test)
@@ -461,21 +459,19 @@
               :method :get
               :host "httpbin.org"
               :response-schema-diff
-              '[[[:path []]
-                 {:path []
-                  :schema
-                  [:map
-                   [:args :map]
-                   [:headers
-                    [:map
-                     [:Accept string?]
-                     [:Host string?]
-                     [:User-Agent string?]
-                     [:X-Amzn-Trace-Id string?]]]
-                   [:origin {:- string? :+ int?}]
-                   [:url string?]]}]
-                [[:path [:origin]]
-                 {:path [:origin] :schema {:- string? :+ int?}}]]
+              '{:type :map,
+                :children
+                [[:args nil {:type :map}]
+                 [:headers
+                  nil
+                  {:type :map,
+                   :children
+                   [[:Accept nil {:type string?}]
+                    [:Host nil {:type string?}]
+                    [:User-Agent nil {:type string?}]
+                    [:X-Amzn-Trace-Id nil {:type string?}]]}]
+                 [:origin nil {:type {:+ int?, :- string?}}]
+                 [:url nil {:type string?}]]}
               :request-schema-diff nil}]}
            (convert-ddiff
             (pit/process {::pit/pcap-path "resources-test/pcap-files/dump2.pcap"

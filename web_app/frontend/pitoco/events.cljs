@@ -41,12 +41,12 @@
                                        {:pitoco.core/pcap-path (:filepath source-base)})}))
                       [{:pitoco.core/api-schemas
                         ['*
-                         :pitoco.core/response-subschemas
-                         :pitoco.core/request-subschemas]}
+                         :pitoco.core/response-schema-map
+                         :pitoco.core/request-schema-map]}
                        {:pitoco.core/base [{:pitoco.core/api-schemas
                                             ['*
-                                             :pitoco.core/response-subschemas
-                                             :pitoco.core/request-subschemas]}]}
+                                             :pitoco.core/response-schema-map
+                                             :pitoco.core/request-schema-map]}]}
                        {:pitoco.core/api-schemas-diff
                         [:pitoco.api-schema/id
                          '*
@@ -58,8 +58,8 @@
                                      {:pitoco.core/pcap-path (:filepath source)}))
                       [{:pitoco.core/api-schemas
                         ['*
-                         :pitoco.core/response-subschemas
-                         :pitoco.core/request-subschemas]}]}])})
+                         :pitoco.core/response-schema-map
+                         :pitoco.core/request-schema-map]}]}])})
         :on-success [::fetch-source-success (assoc params :source source)]
         :on-failure [::fetch-source-failure]
         :format (ajax/transit-request-format)
