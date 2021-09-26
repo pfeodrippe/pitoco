@@ -34,8 +34,12 @@
 
 (defn- pathom-handler
   [{:keys [body-params]}]
-  {:status 200
-   :body   (twrite (pathom (tread body-params)))})
+  (try
+    {:status 200
+     :body   (twrite (pathom (tread body-params)))}
+    (catch Exception e
+      (println e e)
+      (throw e))))
 
 (def ^:private pitoco-upload-sources-folder
   (io/file "../.pitoco/uploaded-sources"))

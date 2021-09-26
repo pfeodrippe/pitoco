@@ -9,7 +9,8 @@
    [pitoco.subs :as subs]
    [re-frame.core :as r]
    [reagent.dom :as dom]
-   [taoensso.sente  :as sente]))
+   [taoensso.sente  :as sente]
+   [clojure.set :as set]))
 
 ;; Websockets.
 (let [{:keys [chsk ch-recv send-fn state]}
@@ -43,10 +44,10 @@
 
 ;; Views.
 (defn- diff?
-  [{:keys [:schema]}]
-  (and (map? schema)
-       (= (set (keys schema))
-          #{:+ :-})))
+  [paths]
+  (and (map? paths)
+       (contains? #{#{:+ :-} #{:-} #{:+}}
+                  (set (keys paths)))))
 
 (defn- grid-template
   [template]
@@ -100,6 +101,69 @@
                               :on-click #(r/dispatch [::events/set-api-schema api-schema])}
       (str (:host api-schema) (:path api-schema))]]))
 
+(defn- show-schema
+  [{:keys [:children :nest-level :key-name :type :map-of-key? :map-of-val? :or?]
+    children-plus {:+ :children}
+    :or {nest-level 0}}]
+  (let [children (->> (cond
+                        (seq children) children
+                        (seq children-plus) children-plus)
+                      (mapv #(if (diff? %) (:+ %) %))
+                      (remove nil?))]
+    [:div
+     [:div.text-xs {:style {:margin-left (* (+ 1 (* 3 nest-level))
+                                            8)
+                            :color "#423818"}}
+      [:span.pl-2.pr-2.rounded-l {:class (if (or (zero? nest-level)
+                                                 key-name)
+                                           ["bg-yellow-300"]
+                                           ["bg-purple-300"])}
+       (cond
+         (zero? nest-level) "root"
+         key-name (name key-name)
+         map-of-key? "key"
+         map-of-val? "val"
+         or? "or"
+         :else "of")]
+      [:span {:style {:color "#1c3956"}}
+       (if (diff? type)
+         [:<>
+          [:span.bg-red-300.pl-2.pr-2
+           "- " (:- type)]
+          [:span.bg-green-300.pl-2.pr-2.rounded-r
+           "+ " (:+ type)]]
+         [:span.bg-blue-300.pl-2.pr-2.rounded-r
+          (str (str (symbol type)))])]]
+     (into
+      [:div]
+      (when (seq children)
+        (cond
+          (contains? #{type (:+ type)} :map)
+          (map #(show-schema (assoc (last %)
+                                    :nest-level (inc nest-level)
+                                    :key-name (first %)))
+               children)
+
+          (or (contains? #{type (:+ type)} :sequential)
+              (contains? #{type (:+ type)} :maybe))
+          (map #(show-schema (assoc %
+                                    :nest-level (inc nest-level)))
+               children)
+
+          (contains? #{type (:+ type)} :or)
+          (map #(show-schema (assoc %
+                                    :or? true
+                                    :nest-level (inc nest-level)))
+               children)
+
+          (contains? #{type (:+ type)} :map-of)
+          [(show-schema (assoc (first children)
+                               :map-of-key? true
+                               :nest-level (inc nest-level)))
+           (show-schema (assoc (second children)
+                               :map-of-val? true
+                               :nest-level (inc nest-level)))])))]))
+
 (defn- api-schema-view
   []
   (let [api-schema @(r/subscribe [::subs/api-schema])
@@ -123,15 +187,7 @@
 
         ;; Tabs.
         (->> [{:text "Request Schema" :identifier :request-schema}
-              {:text "Response Schema" :identifier :response-schema}
-              (when (and (:request-schema-diff api-schema)
-                         ;; TODO: Get rid of these all seqables, we just need
-                         ;; a new place to indicate if the schem is new (or removed).
-                         (seqable? (:request-schema-diff api-schema)))
-                {:text "Request Diff Schema" :identifier :request-diff-schema})
-              (when (and (:response-schema-diff api-schema)
-                         (seqable? (:response-schema-diff api-schema)))
-                {:text "Response Diff Schema" :identifier :response-diff-schema})]
+              {:text "Response Schema" :identifier :response-schema}]
              (remove nil?)
              (mapv (fn [{:keys [:text :identifier]}]
                      [:a.tab.tab-bordered {:class (cond-> []
@@ -142,66 +198,14 @@
              (into [:div.tabs.items-baseline]))
 
         ;; Schema visualization.
-        (let [path->response-diff (if (seqable? (:response-schema-diff api-schema))
-                                    (->> (:response-schema-diff api-schema)
-                                         (mapv second)
-                                         (filter diff?)
-                                         (group-by :path))
-                                    {})
-              path->request-diff (if (seqable? (:request-schema-diff api-schema))
-                                   (->> (:request-schema-diff api-schema)
-                                        (mapv second)
-                                        (filter diff?)
-                                        (group-by :path))
-                                   {})]
-          (->> (case api-schema-tab
-                 :request-schema (::request-subschemas api-schema)
-                 :response-schema (::response-subschemas api-schema)
-                 :response-diff-schema (if (seqable? (:response-schema-diff api-schema))
-                                         (:response-schema-diff api-schema)
-                                         [])
-                 :request-diff-schema (if (seqable? (:request-schema-diff api-schema))
-                                        (:request-schema-diff api-schema)
-                                        []))
-               (mapv (fn [[_ row']]
-                       (let [{:keys [:path :schema] :as row}
-                             (or (and (= api-schema-tab :response-schema)
-                                      (first (path->response-diff (:path row'))))
-                                 (and (= api-schema-tab :request-schema)
-                                      (first (path->request-diff (:path row'))))
-                                 row')
-
-                             field (last path)]
-                         [:div.text-xs
-                          {:style {:margin-left (* (+ 1 (* 3 (count path)))
-                                                   8)
-                                   :color "#423818"}}
-                          [:span.pl-2.pr-2.rounded-l {:class (when-not (or (int? field)
-                                                                           (= field :malli.core/in))
-                                                               ["bg-yellow-300"])}
-                           (cond
-                             (= field :malli.core/in) ""
-                             (int? field) ""
-                             (nil? field) "root"
-                             :else (some-> field name))]
-                          [:span {:style {:color "#1c3956"}}
-                           (if (diff? row)
-                             [:<>
-                              [:span.bg-red-300.pl-2.pr-2
-                               "- " (:- schema)]
-                              [:span.bg-green-300.pl-2.pr-2.rounded-r
-                               "+ " (:+ schema)]]
-                             [:span.bg-blue-300.pl-2.pr-2.rounded-r
-                              (cond
-                                (coll? schema)
-                                (name (first schema))
-
-                                (keyword? schema)
-                                (str (symbol schema))
-
-                                :else
-                                (str schema))])]])))
-               (into [:div])))]]]]))
+        (-> (case api-schema-tab
+              :request-schema (if (some-> api-schema :request-schema-diff seqable?)
+                                (:request-schema-diff api-schema)
+                                (::request-schema-map api-schema))
+              :response-schema (if (some-> api-schema :response-schema-diff seqable?)
+                                 (:response-schema-diff api-schema)
+                                 (::response-schema-map api-schema)))
+            show-schema)]]]]))
 
 (defn- schemas-view
   []
@@ -302,17 +306,22 @@
   ;; - [x] Give option to select current and base sources.
   ;; - [x] Show removed endpoints.
   ;; - [x] Add spinner.
+  ;; - [ ] Fix diff.
   ;; - [ ] Start/Stop sniffing.
   ;; - [ ] Show path on hover.
   ;; - [ ] Enable users to add regex for new data formats.
+  ;; - [ ] Generate examples.
   ;; - [ ] Indicate which endpoints had modification when diffing.
   ;; - [ ] Delete source.
   ;; - [ ] Add filtering (new, removed etc).
+  ;; - [ ] Show query params schema.
+  ;; - [ ] For the loading icon, show only when some counter is 0.
   ;; - [x] List available api schemas sources.
   ;; - [ ] Update schemas in real time.
+  ;; - [ ] Watch for files manually copied/deleted to `.pitoco/uploaded-sources` folder.
   ;; - [ ] Upload to S3 (test with minio).
   ;; - [ ] Add button to start/stop capturing.
-  ;; - [ ] Do things async so we don't have timeout (cache in the backend).
+  ;; - [ ] Do things async so we don't have timeout (also cache in the backend).
 
   ())
 
