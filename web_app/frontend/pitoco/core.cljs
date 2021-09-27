@@ -104,11 +104,18 @@
 (defn- show-schema
   [{:keys [:children :nest-level :key-name :key-raw :type]
     children-plus {:+ :children}
+    children-minus {:- :children}
     :or {nest-level 0}}]
-  (let [children (->> (cond
-                        (seq children) children
-                        (seq children-plus) children-plus)
-                      (mapv #(if (diff? %) (:+ %) %))
+  (let [new-children? (boolean (seq children-plus))
+        removed-children? (boolean (seq children-minus))
+        children' (cond
+                    (seq children) children
+                    (seq children-plus) children-plus)
+        modified-children? (some diff? children')
+        children (->> children'
+                      (mapv #(if (diff? %)
+                               (:+ %)
+                               %))
                       (remove nil?))]
     [:div
      [:div.text-xs {:style {:margin-left (* (+ 1 (* 3 nest-level))
@@ -131,7 +138,16 @@
           [:span.bg-green-300.pl-2.pr-2.rounded-r
            "+ " (:+ type)]]
          [:span.bg-blue-300.pl-2.pr-2.rounded-r
-          (str (str (symbol type)))])]]
+          (str (str (symbol type)))])
+       (when new-children?
+         [:span.badge.badge-outline.badge-sm.badge-primary.ml-2.pl-2.pr-2
+          "New Children"])
+       (when removed-children?
+         [:span.badge.badge-outline.badge-sm.badge-primary.ml-2.pl-2.pr-2
+          "Removed Children"])
+       (when modified-children?
+         [:span.badge.badge-outline.badge-sm.badge-primary.ml-2.pl-2.pr-2
+          "Modified Children"])]]
      (into
       [:div]
       (when (seq children)
@@ -320,6 +336,9 @@
   ;; - [ ] Upload to S3 (test with minio).
   ;; - [ ] Add button to start/stop capturing.
   ;; - [ ] Do things async so we don't have timeout (also cache in the backend).
+  ;; - [ ] Test that things are not breaking changes (maybe by brute force
+  ;;       generating samples from the original schema and checking with the
+  ;;       new one?).
 
   ())
 
