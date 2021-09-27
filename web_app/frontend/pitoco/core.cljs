@@ -102,7 +102,7 @@
       (str (:host api-schema) (:path api-schema))]]))
 
 (defn- show-schema
-  [{:keys [:children :nest-level :key-name :type :map-of-key? :map-of-val? :or?]
+  [{:keys [:children :nest-level :key-name :key-raw :type]
     children-plus {:+ :children}
     :or {nest-level 0}}]
   (let [children (->> (cond
@@ -121,9 +121,7 @@
        (cond
          (zero? nest-level) "root"
          key-name (name key-name)
-         map-of-key? "key"
-         map-of-val? "val"
-         or? "or"
+         key-raw key-raw
          :else "of")]
       [:span {:style {:color "#1c3956"}}
        (if (diff? type)
@@ -152,16 +150,16 @@
 
           (contains? #{type (:+ type)} :or)
           (map #(show-schema (assoc %
-                                    :or? true
+                                    :key-raw "or"
                                     :nest-level (inc nest-level)))
                children)
 
           (contains? #{type (:+ type)} :map-of)
           [(show-schema (assoc (first children)
-                               :map-of-key? true
+                               :key-raw "key"
                                :nest-level (inc nest-level)))
            (show-schema (assoc (second children)
-                               :map-of-val? true
+                               :key-raw "val"
                                :nest-level (inc nest-level)))])))]))
 
 (defn- api-schema-view
