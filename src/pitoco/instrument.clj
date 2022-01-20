@@ -2,8 +2,6 @@
   (:require
    [clojure.pprint :as pprint]
    [clojure.string :as str]
-   [malli.dev]
-   [malli.instrument :as mi]
    [pitoco.core :as pit])
   (:import
    (java.time LocalDateTime)))
@@ -88,7 +86,6 @@
                    (alter-meta! v assoc :doc (str (:doc (::original-meta (meta v)))
                                                   "\n\n### Generated Malli Schema ###\n\n"
                                                   (with-out-str (pprint/pprint schema))))
-                   (mi/collect! {:ns (:ns (meta v))})
                    [v :ok])
                  (catch Error e
                    [v e]))))))
