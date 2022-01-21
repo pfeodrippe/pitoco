@@ -2,8 +2,9 @@ image:https://img.shields.io/clojars/v/pfeodrippe/pitoco.svg[link="http://clojar
 
 = Pitoco
 
-Create Malli API schemas from captured requests and responses (using either https://en.wikipedia.org/wiki/HAR_(file_format)[HAR]
-archives from your browser or .pcap files from tcpdump).
+Create Malli (API) schemas from _captured HTTP requests and responses_ or from recording _inputs and outputs of instrumented functions_, e.g. during
+a test run. You can also diff the API schemas (for example to explore how the REST API changed between versions) and the instrumentation-based
+process includes the schemas in the functions' docstrings, which might help in familiarizing with an unknown code base.
 
 We use https://github.com/stathissideris/spec-provider to infer
 Malli (https://github.com/metosin/malli) schemas and
@@ -11,14 +12,6 @@ https://github.com/wilkerlucio/pathom3 as our main API.
 
 Malli has a way to generate schemas, but it was https://github.com/metosin/malli/issues/191[too slow] in comparison
 with `spec-provider`.
-
-See a quick video at https://youtu.be/iMcUTygFrfk.
-
-== Instrumentation of Clojure Vars
-
-See the `pitoco.instrumentation` namespace.
-
-Also you can watch https://youtu.be/MloJSCl38d0.
 
 == Installation
 
@@ -34,6 +27,22 @@ schemas easily, but you can use Pitoco as a library.
 
 You can start the server at http://localhost:8081 by loading the
 `pitoco.server` namespace. Now start the `shadow-cljs` server and access http://localhost:8000.
+
+=== Generating API schemas from captured HTTP requests and responses
+
+The first use case of Pitoco is generating Malli schemas for REST APIs based on captured HTTP requests and responses
+(using either https://en.wikipedia.org/wiki/HAR_(file_format)[HAR] archives from your browser or .pcap files from tcpdump).
+
+See a quick video at https://youtu.be/iMcUTygFrfk.
+
+=== Generating function schemas from recorded inputs and outputs of instrumented vars
+
+The second use case of Pitoco is to instrument selected vars, record their inputs and outputs, and generate Malli schemas
+from those, including them in the vars' docstrings.
+
+See the `pitoco.instrumentation` namespace.
+
+Also you can watch https://youtu.be/MloJSCl38d0.
 
 == Inspirations
 
