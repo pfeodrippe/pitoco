@@ -65,7 +65,7 @@
                [:j {:optional true} symbol?]
                [:k {:optional true} inst?]
                [:l {:optional true} [:sequential [:or [:set pitoco.core-test/Bigx] int?]]]
-               [:m [:or pitoco.core/IsoDate pitoco.core/UUIDStr]]]
+               [:m [:or ::pit/IsoDate ::pit/UUIDStr]]]
              sch))))
 
   (testing "empty map"
@@ -82,7 +82,7 @@
                  [:map
                   [:b [:or int? pitoco.core-test/Bigx]]
                   [:c {:optional true} string?]
-                  [:d {:optional true} pitoco.core/IsoInstant]]]]]
+                  [:d {:optional true} ::pit/IsoInstant]]]]]
              sch))))
 
   (testing "sequential"
@@ -110,7 +110,7 @@
     (let [sch (infer-schema [{"0ba576b1-deda-4011-ab04-baf1af42d75c" 3}
                              {"0ba576b1-deda-4011-ab04-baf1af42d75c" 3}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map-of pitoco.core/UUIDStr int?]
+      (is (= '[:map-of ::pit/UUIDStr int?]
              sch))))
 
   (testing "`map-of`"
@@ -132,17 +132,17 @@
                  {:spaceId 312}}])]
       (is (some? (generate-sample sch)))
       (is (= '[:map-of
-               pitoco.core/UUIDStr
+               ::pit/UUIDStr
                [:or
-                [:map [:spaceId int?]]
-                [:map [:spaceId pitoco.core/UUIDStr]]]]
+                [:map [:spaceId ::pit/UUIDStr]]
+                [:map [:spaceId int?]]]]
              sch))))
 
   (testing "key as string or custom schema"
     (let [sch (infer-schema [{:board:Completed 9
                               "d0452d8f-f04f-493f-9efd-c774a237d698" 8}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map-of [:or pitoco.core/UUIDStr string?] int?]
+      (is (= '[:map-of [:or ::pit/UUIDStr string?] int?]
              sch))))
 
   (testing "order for the passed schemas matters"

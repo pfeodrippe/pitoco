@@ -49,10 +49,10 @@
 (def UUIDStr
   (m/schema
    (m/-simple-schema
-    {:type `UUIDStr
+    {:type ::UUIDStr
      :pred uuid-str?
      :type-properties {:json-schema/type "string"
-                       :json-schema/description `UUIDStr
+                       :json-schema/description ::UUIDStr
                        :gen/gen (gen/fmap str gen/uuid)}})))
 
 (defn iso-date?
@@ -65,10 +65,10 @@
 (def IsoDate
   (m/schema
    (m/-simple-schema
-    {:type `IsoDate
+    {:type ::IsoDate
      :pred iso-date?
      :type-properties {:json-schema/type "string"
-                       :json-schema/description `IsoDate
+                       :json-schema/description ::IsoDate
                        :gen/gen (gen/fmap #(str (t/date (t/instant %)))
                                           (mg/generator inst?))}})))
 
@@ -82,10 +82,10 @@
 (def IsoInstant
   (m/schema
    (m/-simple-schema
-    {:type `IsoInstant
+    {:type ::IsoInstant
      :pred iso-instant?
      :type-properties {:json-schema/type "string"
-                       :json-schema/description `IsoInstant
+                       :json-schema/description ::IsoInstant
                        :gen/gen (gen/fmap #(str (t/instant %))
                                           (mg/generator inst?))}})))
 
