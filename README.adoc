@@ -13,6 +13,8 @@ https://github.com/wilkerlucio/pathom3 as our main API.
 Malli has a way to generate schemas, but it was https://github.com/metosin/malli/issues/191[too slow] in comparison
 with `spec-provider`.
 
+See a post about Pitoco at https://pfeodrippe.github.io/posts/pitoco.html.
+
 == Installation
 
 Use it directly from github for now (`lein` and `deps` should be able
