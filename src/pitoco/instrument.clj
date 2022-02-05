@@ -21,7 +21,7 @@
         (seq ns-prefix)  (filter #(str/starts-with? % ns-prefix))
         (seq namespaces) (filter #(contains? namespaces-set (str %)))
         ns-meta          (filter #(-> % meta ns-meta))
-        true             (mapv ns-publics)
+        true             (mapv ns-interns)
         true             (mapcat vals)
         (seq vars)       (filter #(contains? vars-set (str (symbol %))))
         var-meta         (filter #(-> % meta var-meta))))))
