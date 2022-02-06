@@ -10,7 +10,7 @@
  :deps
  {cheshire/cheshire {:mvn/version "5.10.0"}
   babashka/process {:mvn/version "0.0.2"}
-  metosin/malli {:mvn/version "0.6.1"}
+  metosin/malli {:mvn/version "0.8.1"}
   spec-provider/spec-provider {:mvn/version "0.4.14"}
   tick/tick {:mvn/version "0.5.0-RC1"}
   lambdaisland/uri {:mvn/version "1.4.70"}
