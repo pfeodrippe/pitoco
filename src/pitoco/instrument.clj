@@ -2,7 +2,8 @@
   (:require
    [clojure.pprint :as pprint]
    [clojure.string :as str]
-   [pitoco.core :as pit])
+   [pitoco.core :as pit]
+   [clojure.java.io :as io])
   (:import
    (java.time LocalDateTime)))
 
@@ -91,13 +92,15 @@
                    [v e]))))))
 
 (defn store-instrumented-vars!
-  "A `pitoco.edn` file will be created at your root with some runtime information
-  about containing the inferred schemas for your vars and some other stuff.
+  "Save generated file inside the `.pitoco` folder at your root with some runtime information
+  about the inferred vars schema and some associated data.
 
   It can be used on your own or in conjunction with the VSCode Pitoco extension, see
   https://marketplace.visualstudio.com/items?itemName=feodrippe.pitoco-extension."
   [vars]
-  (let [vars' (filter #(some-> (meta %) ::input-output deref seq) vars)
+  (let [file-path ".pitoco/generated-files/pitoco-schemas.edn"
+        _ (io/make-parents (io/file file-path))
+        vars' (filter #(some-> (meta %) ::input-output deref seq) vars)
         namespaces (->> vars'
                         (mapv (comp :ns meta))
                         distinct
@@ -122,30 +125,30 @@
                                        (remove (comp #(str/starts-with? % "clojure.core/") last))
                                        (into {}))}]))
                         (into {}))]
-    (spit "pitoco.edn"
-          (with-out-str
-            (pprint/pprint
-             {:namespaces namespaces
-              :vars (->> vars'
-                         (mapv (fn [v]
-                                 (let [{:keys [:malli/schema
-                                               ::input-output
-                                               :arglists]}
-                                       (meta v)
-                                       {:keys [:input :output]} (-> input-output deref first)]
-                                   [(str (symbol v))
-                                    {:malli/schema schema
-                                     :example {:inputs-str (->> input
-                                                                (mapv
-                                                                 (fn [in]
-                                                                   (with-out-str
-                                                                     (pprint/pprint in)))))
-                                               :output-str (with-out-str
-                                                             (pprint/pprint output))}
-                                     :arity->arglist (->> arglists
-                                                          (mapv (juxt count identity))
-                                                          (into {}))}])))
-                         (into {}))})))))
+    (->> {:namespaces namespaces
+          :vars (->> vars'
+                     (mapv (fn [v]
+                             (let [{:keys [:malli/schema
+                                           ::input-output
+                                           :arglists]}
+                                   (meta v)
+                                   {:keys [:input :output]} (-> input-output deref first)]
+                               [(str (symbol v))
+                                {:malli/schema schema
+                                 :example {:inputs-str (->> input
+                                                            (mapv
+                                                             (fn [in]
+                                                               (with-out-str
+                                                                 (pprint/pprint in)))))
+                                           :output-str (with-out-str
+                                                         (pprint/pprint output))}
+                                 :arity->arglist (->> arglists
+                                                      (mapv (juxt count identity))
+                                                      (into {}))}])))
+                     (into {}))}
+         pprint/pprint
+         with-out-str
+         (spit file-path))))
 
 (comment
 
