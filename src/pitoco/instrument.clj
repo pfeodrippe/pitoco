@@ -89,6 +89,8 @@
                                                   (with-out-str (pprint/pprint schema))))
                    [v :ok])
                  (catch Error e
+                   [v e])
+                 (catch Exception e
                    [v e]))))))
 
 (defn store-instrumented-vars!
@@ -100,7 +102,7 @@
   [vars]
   (let [file-path ".pitoco/generated-files/pitoco-schemas.edn"
         _ (io/make-parents (io/file file-path))
-        vars' (filter #(some-> (meta %) ::input-output deref seq) vars)
+        vars' (filter (comp :malli/schema meta) vars)
         namespaces (->> vars'
                         (mapv (comp :ns meta))
                         distinct
