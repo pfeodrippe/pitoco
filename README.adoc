@@ -46,6 +46,12 @@ See the `pitoco.instrumentation` namespace.
 
 Also you can watch https://youtu.be/MloJSCl38d0.
 
+There is a [VSCode
+Extension](https://marketplace.visualstudio.com/items?itemName=feodrippe.pitoco-extension&ssr=false#overview)
+where you can visualize the inferred schemas (+ examples) using
+VSCode in the web (e.g. during PRs so you can have augmented context
+when needed).
+
 == Inspirations
 
 - https://www.akitasoftware.com/blog
