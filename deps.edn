@@ -5,7 +5,10 @@
   :test {:extra-deps {nubank/matcher-combinators {:mvn/version "3.3.1"}
                       lambdaisland/kaocha {:mvn/version "1.0-612"}}
          :extra-paths ["test" "resources-test"]
-         :main-opts   ["-m" "kaocha.runner"]}}
+         :main-opts   ["-m" "kaocha.runner"]}
+  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+            :ns-default hf.depstar
+            :exec-args {}}}
 
  :deps
  {cheshire/cheshire {:mvn/version "5.10.0"}
