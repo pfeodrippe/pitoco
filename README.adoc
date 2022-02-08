@@ -1,4 +1,4 @@
-image:https://img.shields.io/clojars/v/pfeodrippe/pitoco.svg[link="http://clojars.org/pfeodrippe/pitoco",title="Clojars Project"]
+image:https://img.shields.io/clojars/v/io.github.pfeodrippe/pitoco.svg[link="http://clojars.org/io.github.pfeodrippe/pitoco",title="Clojars Project"]
 
 = Pitoco
 
