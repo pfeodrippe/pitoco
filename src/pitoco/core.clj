@@ -188,15 +188,13 @@
 (defn infer-schema
   "Infer schema from a collection of samples.
 
-  `:symbol-format?` is `true` by default, it makes all the schemas symbols.
   Set it to `falsy` if you want the output in the form of preds/schemas."
   ([samples]
    (infer-schema samples {}))
-  ([samples {:keys [:symbol-format? :debug? ::schemas]
+  ([samples {:keys [::schemas]
              existing-data-formats ::data-formats
              existing-stats ::stats
-             :or {symbol-format? true
-                  schemas []}
+             :or {schemas []}
              :as options}]
    ;; We cannot have `existing-stats` set and not have the `existing-data-formats`
    ;; are not serializable and each new evaluation here (from `new-data-formats`)
@@ -227,18 +225,7 @@
          ;; define a powerful form of equivalence.
          schema
          (fn schema [stats]
-           ;; `rs` is a function which checks if we want to output a symbol
-           ;; or a resolved function (the last serves better for generation
-           ;; of samples and for equality in tests without having to use a
-           ;; registry).
-           (let [rs (memoize (fn [v]
-                               (if symbol-format?
-                                 (if debug?
-                                   ;; Attach metadata to each element.
-                                   (with-meta v {:stats stats})
-                                   v)
-                                 (-> v resolve deref))))
-                 ;; We remove the preds which have a lower hierarchy (custom ones
+           (let [;; We remove the preds which have a lower hierarchy (custom ones
                  ;; always are in a higher level).
                  invalid-original-validators (->> (::stats/pred-map stats)
                                                   (remove (comp (conj validators map? set? sequential?) first))
@@ -310,19 +297,19 @@
                                                                               [k (schema nested-stats)])))
                                                                     (sort-by first)
                                                                     (into [:map])))
-                                                        string? (rs 'string?)
-                                                        integer? (rs 'int?)
+                                                        string? :string
+                                                        integer? :int
                                                         set? [:set (schema (::stats/elements-set stats))]
                                                         sequential? [:sequential (schema (::stats/elements-coll stats))]
-                                                        nil? (rs 'nil?)
-                                                        stats/float? (rs 'number?)
-                                                        stats/double? (rs 'number?)
-                                                        decimal? (rs 'decimal?)
-                                                        number? (rs 'number?)
-                                                        boolean? (rs 'boolean?)
-                                                        inst? (rs 'inst?)
-                                                        symbol? (rs 'symbol?)
-                                                        keyword? (rs 'keyword?)
+                                                        nil? :nil
+                                                        stats/float? 'number?
+                                                        stats/double? 'number?
+                                                        decimal? 'decimal?
+                                                        number? 'number?
+                                                        boolean? :boolean
+                                                        inst? 'inst?
+                                                        symbol? :symbol
+                                                        keyword? :keyword
                                                         nil))]
                                        (cond
                                          @res
@@ -332,30 +319,30 @@
                                          (m/type @data-format)
 
                                          :else
-                                         (rs 'any?))))))
-                 types (remove #{(rs 'any?) (rs 'nil?)} types')]
+                                         :any)))))
+                 types (remove #{:any :nil} types')]
              (cond
                (zero? (count types'))
-               (rs 'any?)
+               :any
 
-               ;; Convert `nil?` to `any?` as
+               ;; Convert `:nil` to `:any` as
                ;; it's very likely that a parameter
                ;; is not really only `nil`, it's only
                ;; that we are not testing all the
                ;; possible cases.
-               (= (set types') #{(rs 'nil?)})
-               (rs 'any?)
+               (= (set types') #{:nil})
+               :any
 
                (= (count types') 1)
                (first types')
 
-               (= (set types') #{(rs 'any?) (rs 'nil?)})
-               (rs 'any?)
+               (= (set types') #{:any :nil})
+               :any
 
-               (some #{(rs 'nil?)} types')
+               (some #{:nil} types')
                [:maybe
                 (if (= (count types) 1)
-                  ;; When there is some `any?` together some other types, we can
+                  ;; When there is some `:any` together some other types, we can
                   ;; get rid of the any.
                   (first types)
                   (into [:or] (sort-by str types)))]
@@ -463,25 +450,27 @@
              (group-by #(select-keys (:request %) [:path :method :host]))
              (mapv (fn [[k samples]]
                      [k
-                      (let [{:keys [:request-schema :response-schema]} (group->api-schema k)
+                      (let [api-schema (group->api-schema k)
                             request-samples (mapv #(-> % :request :body) samples)
                             request-stats (collect-stats request-samples
-                                                         (assoc options ::stats (-> request-schema meta ::stats)))
+                                                         (assoc options ::stats
+                                                                (-> api-schema meta ::request-schema-stats)))
                             response-samples (mapv #(-> % :response :body) samples)
                             response-stats (collect-stats response-samples
-                                                          (assoc options ::stats (-> response-schema meta ::stats)))]
+                                                          (assoc options ::stats
+                                                                 (-> api-schema meta ::response-schema-stats)))]
                         (-> (merge k
                                    ;; Assoc `::stats` into metadata.
                                    ;; TODO: We probably could make this a record so we
                                    ;; can store things more explicitly.
                                    {::api-schema/id (hash k)
-                                    :request-schema (with-meta (infer-schema request-samples
-                                                                             (assoc options ::stats request-stats))
-                                                      {::stats request-stats})
-                                    :response-schema (with-meta (infer-schema response-samples
-                                                                              (assoc options ::stats response-stats))
-                                                       {::stats response-stats})})
-                            (with-meta {::api-calls samples})))]))
+                                    :request-schema (infer-schema request-samples
+                                                                  (assoc options ::stats request-stats))
+                                    :response-schema (infer-schema response-samples
+                                                                   (assoc options ::stats response-stats))})
+                            (with-meta {::api-calls samples
+                                        ::request-schema-stats request-stats
+                                        ::response-schema-stats response-stats})))]))
              (into {})
              ;; Merge existing api schemas, if any.
              (merge group->api-schema)
@@ -665,6 +654,30 @@
        (filter json-content-type?)
        doall))
 
+(defn- adapt-swagger
+  [swg]
+  (let [swg' (walk/prewalk (fn [obj]
+                             (if (and (map-entry? obj)
+                                      (= (key obj) :$ref))
+                               (let [[_ v] (str/split (val obj) #"#/definitions/")]
+                                 [(key obj) (str "#/definitions/"
+                                                 (-> v
+                                                     (str/replace #"/" ".")
+                                                     (str/replace #":" "")))])
+                               obj))
+                           swg)]
+    (cond-> swg'
+      (seq (:definitions swg'))
+      (update :definitions
+              (fn [definitions]
+                (->> definitions
+                     (mapv (fn [[k v]]
+                             [(-> (str k)
+                                  (str/replace #"/" ".")
+                                  (str/replace #":" ""))
+                              v]))
+                     (into {})))))))
+
 ;; TODO: Make default registry a dynamic variable (?).
 (defn openapi-3-from-api-schemas
   ([api-schemas]
@@ -710,16 +723,18 @@
                                    {:parameters path-params
                                     :responses {200 {:content
                                                      {"*/*"
-                                                      {:schema (swagger/transform
-                                                                response-schema
-                                                                (process-options options))}}
+                                                      {:schema (adapt-swagger
+                                                                (swagger/transform
+                                                                 response-schema
+                                                                 (process-options options)))}}
                                                      :description "Responses."}}}
-                                   (when-not (contains? #{'nil? 'any?} request-schema)
+                                   (when-not (contains? #{:nil :any} request-schema)
                                      {:requestBody {:content
                                                     {"*/*"
-                                                     {:schema (swagger/transform
-                                                               request-schema
-                                                               (process-options options))}}
+                                                     {:schema (adapt-swagger
+                                                               (swagger/transform
+                                                                request-schema
+                                                                (process-options options)))}}
                                                     :required true}}))}))
                          (apply merge))})))
          (apply merge))}))

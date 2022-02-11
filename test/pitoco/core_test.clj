@@ -17,7 +17,7 @@
 (def ^:private Bigx
   (m/schema
    (m/-simple-schema
-    {:type `Bigx
+    {:type ::Bigx
      :pred bigx?
      :type-properties {:json-schema/type "string"
                        :gen/gen (gen/large-integer* {:min 10 :max 19})}})))
@@ -53,18 +53,18 @@
                 {:m "2020-10-31"}])]
       (is (some? (generate-sample sch)))
       (is (= '[:map
-               [:a {:optional true} int?]
-               [:b {:optional true} int?]
-               [:c {:optional true} boolean?]
+               [:a {:optional true} :int]
+               [:b {:optional true} :int]
+               [:c {:optional true} :boolean]
                [:d {:optional true} number?]
                [:e {:optional true} number?]
-               [:f {:optional true} any?]
+               [:f {:optional true} :any]
                [:g {:optional true} decimal?]
-               [:h {:optional true} keyword?]
-               [:i {:optional true} [:set int?]]
-               [:j {:optional true} symbol?]
+               [:h {:optional true} :keyword]
+               [:i {:optional true} [:set :int]]
+               [:j {:optional true} :symbol]
                [:k {:optional true} inst?]
-               [:l {:optional true} [:sequential [:or [:set pitoco.core-test/Bigx] int?]]]
+               [:l {:optional true} [:sequential [:or :int [:set ::Bigx]]]]
                [:m [:or ::pit/IsoDate ::pit/UUIDStr]]]
              sch))))
 
@@ -75,42 +75,42 @@
                 {:a {:b 30}}
                 {}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map
-               [:a
-                {:optional true}
-                [:maybe
-                 [:map
-                  [:b [:or int? pitoco.core-test/Bigx]]
-                  [:c {:optional true} string?]
-                  [:d {:optional true} ::pit/IsoInstant]]]]]
+      (is (= [:map
+              [:a
+               {:optional true}
+               [:maybe
+                [:map
+                 [:b [:or :int ::Bigx]]
+                 [:c {:optional true} :string]
+                 [:d {:optional true} ::pit/IsoInstant]]]]]
              sch))))
 
   (testing "sequential"
     (let [sch (infer-schema [{:a []}
                              {:a []}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map
-               [:a [:sequential any?]]]
+      (is (= [:map
+              [:a [:sequential :any]]]
              sch))))
 
   (testing "with a string as a key, you have a more generic schema"
     (let [sch (infer-schema [{"az" 3}
                              {:b 3}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map-of string? int?]
+      (is (= [:map-of :string :int]
              sch)))
 
     (let [sch (infer-schema [{:board:Completed 9
                               "board:In progress" 8}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map-of string? int?]
+      (is (= [:map-of :string :int]
              sch))))
 
   (testing "uuid"
     (let [sch (infer-schema [{"0ba576b1-deda-4011-ab04-baf1af42d75c" 3}
                              {"0ba576b1-deda-4011-ab04-baf1af42d75c" 3}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map-of ::pit/UUIDStr int?]
+      (is (= [:map-of ::pit/UUIDStr :int]
              sch))))
 
   (testing "`map-of`"
@@ -120,7 +120,7 @@
                              {:b "3"}
                              {:b 3}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map-of string? [:or [:or int? string?] int?]]
+      (is (= [:map-of :string [:or :int [:or :int :string]]]
              sch))))
 
   (testing "`or` with custom schema"
@@ -131,25 +131,25 @@
                  "0d19acf5-aa6d-4e7c-929a-9fa182fd594e"
                  {:spaceId 312}}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map-of
-               ::pit/UUIDStr
-               [:or
-                [:map [:spaceId ::pit/UUIDStr]]
-                [:map [:spaceId int?]]]]
+      (is (= [:map-of
+              ::pit/UUIDStr
+              [:or
+               [:map [:spaceId :int]]
+               [:map [:spaceId ::pit/UUIDStr]]]]
              sch))))
 
   (testing "key as string or custom schema"
     (let [sch (infer-schema [{:board:Completed 9
                               "d0452d8f-f04f-493f-9efd-c774a237d698" 8}])]
       (is (some? (generate-sample sch)))
-      (is (= '[:map-of [:or ::pit/UUIDStr string?] int?]
+      (is (= [:map-of [:or ::pit/UUIDStr :string] :int]
              sch))))
 
   (testing "order for the passed schemas matters"
     (let [options {::pit/schemas [(pit/value-schema "abc")
                                   (pit/value-schema "bc")
                                   (m/-simple-schema {:type :abc/regex
-                                                     :pred #(when (string? %)
+                                                     :pred #(when (:string %)
                                                               (boolean (re-matches #"abc.*" %)))
                                                      :type-properties {:gen/gen (gen/elements ["LOOK"])}})]}
           sch (infer-schema [{"abc" 10}
@@ -158,13 +158,13 @@
                              {"abc" "abc"}]
                             options)]
       (is (some? (generate-sample sch options)))
-      (is (= '[:map
-               ["abc" [:or "abc" pitoco.core-test/Bigx string?]]
-               ["bc" {:optional true} int?]]
+      (is (= [:map
+              ["abc" [:or ::Bigx :string "abc"]]
+              ["bc" {:optional true} :int]]
              sch)))
 
     (let [options {::pit/schemas [(m/-simple-schema {:type :abc/regex
-                                                     :pred #(when (string? %)
+                                                     :pred #(when (:string %)
                                                               (boolean (re-matches #"abc.*" %)))
                                                      :type-properties {:gen/gen (gen/elements ["LOOK"])}})
                                   (pit/value-schema "abc")
@@ -175,14 +175,14 @@
                              {"abc" "abc"}]
                             options)]
       (is (some? (generate-sample sch options)))
-      (is (= '[:map-of
-               [:or :abc/regex "bc"]
-               [:or [:or :abc/regex pitoco.core-test/Bigx string?] int?]]
+      (is (= [:map
+              ["abc" [:or ::Bigx :string "abc"]]
+              ["bc" {:optional true} :int]]
              sch)))
 
     (let [options {::pit/schemas [(pit/value-schema "abc")
                                   (m/-simple-schema {:type :abc/regex
-                                                     :pred #(when (string? %)
+                                                     :pred #(when (:string %)
                                                               (boolean (re-matches #"abc.*" %)))})]}
           sch (infer-schema [{"abc" 10}
                              {"bc" 30
@@ -190,9 +190,9 @@
                              {"abc" "abc"}]
                             options)]
       (is (some? (generate-sample sch options)))
-      (is (= '[:map-of
-               [:or "abc" string?]
-               [:or [:or "abc" pitoco.core-test/Bigx string?] int?]]
+      (is (= [:map-of
+              [:or :string "abc"]
+              [:or :int [:or ::Bigx :string "abc"]]]
              sch)))))
 
 (deftest process
@@ -224,17 +224,15 @@
                :path "/api/myresource/PITOCO_INT"
                :method :get
                :host "myexample.com"
-               :request-schema 'any?
-               :response-schema [:map [:a `Bigx]]}
+               :request-schema :any
+               :response-schema [:map [:a ::Bigx]]}
               {:pitoco.api-schema/id int?
                :path "/api/other/PITOCO_INT"
                :method :post
                :host "myexample.com"
-               :request-schema [:map [:b 'string?]]
-               :response-schema [:map [:a `Bigx]]}]
+               :request-schema [:map [:b :string]]
+               :response-schema [:map [:a ::Bigx]]}]
              api-schemas)))
-
-      ;; TODO: Add a test which adds a schema using a custom schema.
 
       (testing "custom regexes for path and openapi-3"
         (let [{:keys [::pit/api-schemas
@@ -275,20 +273,20 @@
                [{:path "/api/myresource/PITOCO_INT/SCHEMA_EXTERNAL_ID"
                  :method :get
                  :host "myexample.com"
-                 :request-schema 'any?
-                 :response-schema [:map [:a `Bigx]]}
+                 :request-schema :any
+                 :response-schema [:map [:a ::Bigx]]}
                 {:path "/api/other/SCHEMA_ISO_DATE"
                  :method :post
                  :host "myexample.com"
-                 :request-schema [:map [:b 'string?]]
-                 :response-schema [:map [:a `Bigx]]}
+                 :request-schema [:map [:b :string]]
+                 :response-schema [:map [:a ::Bigx]]}
                 {:path "/api/other/SCHEMA_ISO_DATE/abc"
                  :method :post
                  :host "myexample.com"
                  :request-schema [:map
-                                  [:b 'string?]
-                                  [:c {:optional true} `Bigx]]
-                 :response-schema [:map [:a `Bigx]]}]
+                                  [:b :string]
+                                  [:c {:optional true} ::Bigx]]
+                 :response-schema [:map [:a ::Bigx]]}]
                api-schemas))
           (is (match?
                {:openapi "3.0.1"
@@ -310,8 +308,9 @@
                                             {"*/*"
                                              {:schema
                                               {:type "object"
-                                               :properties {:a {:type "string"}}
-                                               :required [:a]}}}
+                                               :properties {:a {:$ref "#/definitions/pitoco.core-test.Bigx"}}
+                                               :required [:a]
+                                               :definitions {"pitoco.core-test.Bigx" {:type "string"}}}}}
                                             :description "Responses."}}}}
 
                         "/api/other/{arg0}"
@@ -325,8 +324,9 @@
                                              {"*/*"
                                               {:schema
                                                {:type "object"
-                                                :properties {:a {:type "string"}}
-                                                :required [:a]}}}
+                                                :properties {:a {:$ref "#/definitions/pitoco.core-test.Bigx"}}
+                                                :required [:a]
+                                                :definitions {"pitoco.core-test.Bigx" {:type "string"}}}}}
                                              :description "Responses."}}
                                 :requestBody {:content
                                               {"*/*"
@@ -347,16 +347,19 @@
                                              {"*/*"
                                               {:schema
                                                {:type "object"
-                                                :properties {:a {:type "string"}}
-                                                :required [:a]}}}
+                                                :properties {:a {:$ref "#/definitions/pitoco.core-test.Bigx"}}
+                                                :required [:a]
+                                                :definitions {"pitoco.core-test.Bigx" {:type "string"}}}}}
                                              :description "Responses."}}
                                 :requestBody {:content
                                               {"*/*"
                                                {:schema
                                                 {:type "object"
                                                  :properties
-                                                 {:b {:type "string"} :c {:type "string"}}
-                                                 :required [:b]}}}
+                                                 {:b {:type "string"}
+                                                  :c {:$ref "#/definitions/pitoco.core-test.Bigx"}}
+                                                 :required [:b]
+                                                 :definitions {"pitoco.core-test.Bigx" {:type "string"}}}}}
                                               :required true}}}}}
                openapi-3))))
 
@@ -403,21 +406,21 @@
                [{:path "/api/myresource/SCHEMA_EXTERNAL_ID"
                  :method :get
                  :host "myexample.com"
-                 :request-schema 'any?
-                 :response-schema [:map [:a `Bigx]]}
+                 :request-schema :any
+                 :response-schema [:map [:a ::Bigx]]}
                 {:path "/api/other/SCHEMA_ISO_DATE"
                  :method :post
                  :host "myexample.com"
-                 :request-schema [:map [:b 'string?]]
-                 :response-schema [:map [:a `Bigx]]}
+                 :request-schema [:map [:b :string]]
+                 :response-schema [:map [:a ::Bigx]]}
                 {:path "/api/other/SCHEMA_ISO_DATE/abc"
                  :method :post
                  :host "myexample.com"
                  :request-schema
                  [:map
-                  [:b 'string?]
-                  [:c {:optional true} `Bigx]]
-                 :response-schema [:map [:a `Bigx]]}]
+                  [:b :string]
+                  [:c {:optional true} ::Bigx]]
+                 :response-schema [:map [:a ::Bigx]]}]
                schemas-3)))))))
 
 (defn- convert-ddiff
@@ -433,21 +436,21 @@
 (deftest from-file-test
   (testing "pcap"
     (is (match?
-         {::pit/api-schemas '[{:path "/get"
-                               :method :get
-                               :host "httpbin.org"
-                               :request-schema any?
-                               :response-schema
-                               [:map
-                                [:args [:map]]
-                                [:headers
-                                 [:map
-                                  [:Accept string?]
-                                  [:Host string?]
-                                  [:User-Agent string?]
-                                  [:X-Amzn-Trace-Id string?]]]
-                                [:origin string?]
-                                [:url string?]]}]}
+         {::pit/api-schemas [{:path "/get"
+                              :method :get
+                              :host "httpbin.org"
+                              :request-schema :any
+                              :response-schema
+                              [:map
+                               [:args [:map]]
+                               [:headers
+                                [:map
+                                 [:Accept :string]
+                                 [:Host :string]
+                                 [:User-Agent :string]
+                                 [:X-Amzn-Trace-Id :string]]]
+                               [:origin :string]
+                               [:url :string]]}]}
          (pit/process {::pit/pcap-path "resources-test/pcap-files/dump.pcap"}
                       [::pit/api-schemas]))))
 
@@ -459,19 +462,19 @@
               :method :get
               :host "httpbin.org"
               :response-schema-diff
-              '{:type :map,
-                :children
-                [[:args nil {:type :map}]
-                 [:headers
-                  nil
-                  {:type :map,
-                   :children
-                   [[:Accept nil {:type string?}]
-                    [:Host nil {:type string?}]
-                    [:User-Agent nil {:type string?}]
-                    [:X-Amzn-Trace-Id nil {:type string?}]]}]
-                 [:origin nil {:type {:+ int?, :- string?}}]
-                 [:url nil {:type string?}]]}
+              {:type :map,
+               :children
+               [[:args nil {:type :map}]
+                [:headers
+                 nil
+                 {:type :map,
+                  :children
+                  [[:Accept nil {:type :string}]
+                   [:Host nil {:type :string}]
+                   [:User-Agent nil {:type :string}]
+                   [:X-Amzn-Trace-Id nil {:type :string}]]}]
+                [:origin nil {:type {:+ :int, :- :string}}]
+                [:url nil {:type :string}]]}
               :request-schema-diff nil}]}
            (convert-ddiff
             (pit/process {::pit/pcap-path "resources-test/pcap-files/dump2.pcap"
@@ -496,31 +499,31 @@
                           ::pit/base {::pit/api-schemas [{:path "/get"
                                                           :method :get
                                                           :host "httpbin.org"
-                                                          :request-schema 'any?
-                                                          :response-schema '[:map
-                                                                             [:args [:map]]
-                                                                             [:headers
-                                                                              [:map
-                                                                               [:Accept string?]
-                                                                               [:Host string?]
-                                                                               [:User-Agent string?]
-                                                                               [:X-Amzn-Trace-Id string?]]]
-                                                                             [:origin int?]
-                                                                             [:url string?]]}
+                                                          :request-schema :any
+                                                          :response-schema [:map
+                                                                            [:args [:map]]
+                                                                            [:headers
+                                                                             [:map
+                                                                              [:Accept :string]
+                                                                              [:Host :string]
+                                                                              [:User-Agent :string]
+                                                                              [:X-Amzn-Trace-Id :string]]]
+                                                                            [:origin :int]
+                                                                            [:url :string]]}
                                                          ;; We add some bogus one two.
                                                          {:path "/olha"
                                                           :method :get
                                                           :host "httpbin.org"
-                                                          :request-schema 'any?
-                                                          :response-schema '[:map
-                                                                             [:args [:map]]
-                                                                             [:headers
-                                                                              [:map
-                                                                               [:Accept string?]
-                                                                               [:Host string?]
-                                                                               [:User-Agent string?]
-                                                                               [:X-Amzn-Trace-Id string?]]]
-                                                                             [:url string?]]}]}}
+                                                          :request-schema :any
+                                                          :response-schema [:map
+                                                                            [:args [:map]]
+                                                                            [:headers
+                                                                             [:map
+                                                                              [:Accept :string]
+                                                                              [:Host :string]
+                                                                              [:User-Agent :string]
+                                                                              [:X-Amzn-Trace-Id :string]]]
+                                                                            [:url :string]]}]}}
                          [::pit/api-schemas-diff])))))
 
     (testing "empty"
