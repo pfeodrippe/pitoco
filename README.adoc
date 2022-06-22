@@ -1,6 +1,6 @@
 image:https://img.shields.io/clojars/v/io.github.pfeodrippe/pitoco.svg[link="http://clojars.org/io.github.pfeodrippe/pitoco",title="Clojars Project"]
 
-= Pitoco
+== Pitoco
 
 Create Malli (API) schemas from _captured HTTP requests and responses_ or from recording _inputs and outputs of instrumented functions_, e.g. during
 a test run. You can also diff the API schemas (for example to explore how the REST API changed between versions) and the instrumentation-based
@@ -55,3 +55,43 @@ when needed).
 == Inspirations
 
 - https://www.akitasoftware.com/blog
+
+== Developer setup
+
+Clone the repo and enter in the repo
+
+[source,shell]
+----
+git clone https://github.com/pfeodrippe/pitoco
+cd pitoco
+----
+
+Enter in the `web_app` directory, install `npm` deps and start the frontend.
+
+[source,shell]
+----
+cd web_dev
+npm install
+npm start
+----
+
+The `npm start` command should spawn both `shadow-cljs` and `tailwindcss`.
+
+Then in another terminal, you can enter in the `web_dev` folder again and start the backend.
+
+[source,shell]
+----
+cd pitoco/web_dev
+clj -e "(require,'pitoco.server)"
+----
+
+
+After a while, the frontend will be available at http://localhost:8000[localhost:8000]. You can connect on it via browser.
+
+The backend will be available at http://localhost:8081[localhost:8081]. You can check if it is running with `curl`
+
+[source,shell]
+----
+curl http://localhost:8081/chsk
+# {"type":"exception","class":"clojure.lang.ExceptionInfo"}
+----
