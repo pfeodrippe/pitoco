@@ -400,8 +400,11 @@
     ;; Run `tcptrace` to generate the dat files.
     (-> (conj '[sh -c] (str "tcptrace -el " (.getAbsolutePath (io/file pcap-path))))
         (sh/process {:out :string :err :string :dir folder-path})
-        :out
         deref
+        (doto (as-> % (when (= 127 (:exit %))
+                        (throw (ex-info (:err %)
+                                 %)))))
+        :out
         str/split-lines)
     ;; Return all the generated `.dat` files.
     (->> (io/file folder-path) file-seq (filter #(str/includes? % ".dat")))))
